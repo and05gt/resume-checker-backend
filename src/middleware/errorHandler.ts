@@ -5,6 +5,7 @@ import {
   type ErrorRequestHandler,
 } from 'express';
 import { AppError } from '../utils/appError.js';
+import { env } from '../config/env.js';
 
 interface MongooseValidationError {
   name: 'ValidationError';
@@ -86,7 +87,7 @@ export const errorHandler: ErrorRequestHandler = (
     error: {
       message,
       ...(details !== undefined ? { details } : {}),
-      ...(process.env.NODE_ENV === 'production' ? {} : { stack }),
+      ...(env.isProd ? {} : { stack: stack }),
     },
   });
 };
