@@ -1,4 +1,4 @@
-import { rateLimit } from 'express-rate-limit';
+import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import { type Request } from 'express';
 
 export const analyzeLimiter = rateLimit({
@@ -7,7 +7,10 @@ export const analyzeLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   keyGenerator: (req: Request): string => {
-    return req.user?._id?.toString() || req.ip || 'anonymous';
+    if (req.user?._id) {
+      return req.user._id.toString();
+    }
+    return ipKeyGenerator(req.ip ?? '127.0.0.1');
   },
   message: {
     error: { message: 'Too many analyzes - please wait a minute and retry.' },

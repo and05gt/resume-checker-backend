@@ -7,6 +7,7 @@ import { connectDB } from './config/db.js';
 import { notFoundHandler } from './middleware/notFoundHandler.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
 
 export const app = express();
 
@@ -18,6 +19,7 @@ app.use(cookieParser());
 if (!env.isProd) app.use(morgan('dev'));
 
 app.use('/api/health', healthRouter);
+app.use('/api/auth', authRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
