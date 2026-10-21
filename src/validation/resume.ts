@@ -117,3 +117,15 @@ export const analyzeBody = z.object({
   versionId: objectIdSchema.optional(),
   targetRole: z.string().trim().max(120).optional(),
 });
+
+export const rewriteBody = z.object({
+  analysisId: objectIdSchema,
+  rewriteIds: z.array(objectIdSchema).optional(),
+  label: z.string().trim().max(40).optional(),
+});
+
+export const diffQuery = z.object({
+  from: objectIdSchema,
+  to: objectIdSchema,
+  mode: z.enum(['words', 'lines']).optional(),
+});

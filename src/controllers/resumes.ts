@@ -3,11 +3,13 @@ import {
   analyzeResumeService,
   createResumeService,
   deleteResumeService,
+  diffResumeService,
   getAllResumesService,
   getAnalysesService,
   getAnalysisVersionService,
   getResumeService,
   getVersionResumeService,
+  rewriteResumeService,
 } from '../services/resumes.js';
 import { AppError } from '../utils/appError.js';
 
@@ -104,4 +106,40 @@ export const getAnalysisVersionController = async (
   );
 
   res.json({ analysis: analysis || null });
+};
+
+export const rewriteResumeController = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+
+  const { newVersion, appliedCount } = await rewriteResumeService(
+    id,
+    req.user!._id.toString(),
+    req.body.analysisId,
+    req.body.rewriteIds,
+    req.body.label
+  );
+
+  res.status(201).json({ version: newVersion, appliedCount });
+};
+
+export const diffResumeController = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+  const to = typeof req.query.to === 'string' ? req.query.to : undefined;
+  const mode = req.query.mode === 'lines' ? 'lines' : 'words';
+
+  if (!from || !to) {
+    throw AppError.badRequest(
+      'Query parameters "from" and "to" version IDs are required'
+    );
+  }
+
+  const {
+    from: fromVersion,
+    to: toVersion,
+    parts,
+    stats,
+  } = await diffResumeService(id, req.user!._id.toString(), from, to, mode);
+
+  res.json({ from: fromVersion, to: toVersion, parts, stats });
 };

@@ -4,8 +4,14 @@ import { ResumeVersion } from '../models/resumeVersion.js';
 import { IResume } from '../types/resume.js';
 import { IResumeVersion } from '../types/resumeVersion.js';
 import { AppError } from '../utils/appError.js';
+import { diffText, summarize } from '../utils/diffResumes.js';
 import { analyzeResume } from '../utils/geminiAnalysis.js';
 import { extractText } from '../utils/parsePdf.js';
+import {
+  applyRewritesToText,
+  looksEmpty,
+  patchBulletsInSections,
+} from '../utils/rewriteResume.js';
 import { parseResume } from '../utils/structuredParser.js';
 
 export const loadOwnedResume = async (
@@ -168,4 +174,88 @@ export const getAnalysisVersionService = async (
     .lean();
 
   return analysis;
+};
+
+export const rewriteResumeService = async (
+  id: string,
+  userId: string,
+  analysisId: string,
+  rewriteIds: string[],
+  bodyLabel: string
+) => {
+  const resume = await loadOwnedResume(id, userId);
+
+  const analysis = await Analysis.findOne({
+    _id: analysisId,
+    resumeId: resume._id,
+  });
+  if (!analysis) throw AppError.notFound('Analysis not found');
+
+  const baseVersion = await loadVersion(
+    resume._id.toString(),
+    analysis.versionId.toString()
+  );
+
+  const selected = rewriteIds?.length
+    ? analysis.bulletRewrites.filter(r => rewriteIds.includes(r._id.toString()))
+    : analysis.bulletRewrites;
+  if (!selected.length)
+    throw AppError.badRequest('No rewrites selected to apply');
+
+  const newRaw = applyRewritesToText(baseVersion.rawText, selected);
+
+  const patchedFromBase = patchBulletsInSections(
+    baseVersion.parsedSections,
+    selected
+  );
+  const reparsed = await parseResume(newRaw);
+  const finalParsed = looksEmpty(reparsed) ? patchedFromBase : reparsed;
+
+  const nextNumber = resume.latestVersionNumber + 1;
+
+  const newVersion = await ResumeVersion.create({
+    resumeId: resume._id,
+    versionNumber: nextNumber,
+    label: bodyLabel?.trim() || `V${nextNumber}`,
+    rawText: newRaw,
+    parsedSections: finalParsed,
+    sourceType: 'rewrite',
+    parentVersionId: baseVersion._id,
+  });
+
+  resume.latestVersionNumber = nextNumber;
+  resume.currentVersionId = newVersion._id;
+  await resume.save();
+
+  return { newVersion, appliedCount: selected.length };
+};
+
+export const diffResumeService = async (
+  id: string,
+  userId: string,
+  fromVersionId: string,
+  toVersionId: string,
+  mode: 'words' | 'lines'
+) => {
+  const resume = await loadOwnedResume(id, userId);
+
+  const [fromV, toV] = await Promise.all([
+    loadVersion(resume._id.toString(), fromVersionId),
+    loadVersion(resume._id.toString(), toVersionId),
+  ]);
+
+  const parts = diffText(fromV.rawText, toV.rawText, mode);
+
+  const from = {
+    id: fromV._id,
+    label: fromV.label,
+    versionNumber: fromV.versionNumber,
+  };
+  const to = {
+    id: toV._id,
+    label: toV.label,
+    versionNumber: toV.versionNumber,
+  };
+
+  return { from, to, parts, stats: summarize(parts) };
 };
