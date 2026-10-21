@@ -1,8 +1,11 @@
 import { type Request, type Response } from 'express';
 import {
+  analyzeResumeService,
   createResumeService,
   deleteResumeService,
   getAllResumesService,
+  getAnalysesService,
+  getAnalysisVersionService,
   getResumeService,
   getVersionResumeService,
 } from '../services/resumes.js';
@@ -64,4 +67,41 @@ export const deleteResumeController = async (req: Request, res: Response) => {
   await deleteResumeService(id, req.user!._id.toString());
 
   res.json({ ok: true });
+};
+
+export const analyzeResumeController = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+
+  const result = await analyzeResumeService(
+    id,
+    req.user!._id.toString(),
+    req.body.versionId,
+    req.body.targetRole
+  );
+
+  res.status(201).json({ analysis: result });
+};
+
+export const getAnalysesController = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+
+  const analyses = await getAnalysesService(id, req.user!._id.toString());
+
+  res.json({ analyses });
+};
+
+export const getAnalysisVersionController = async (
+  req: Request,
+  res: Response
+) => {
+  const id = String(req.params.id);
+  const versionId = String(req.params.versionId);
+
+  const analysis = await getAnalysisVersionService(
+    id,
+    req.user!._id.toString(),
+    versionId
+  );
+
+  res.json({ analysis: analysis || null });
 };

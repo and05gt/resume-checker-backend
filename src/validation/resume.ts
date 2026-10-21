@@ -61,6 +61,47 @@ export const resumeSchema = z.object({
   interests: z.array(z.string()).default([]),
 });
 
+export const analysisSchema = z.object({
+  atsScore: z.number().min(0).max(100),
+  scoreBreakdown: z.object({
+    keywords: z.number().min(0).max(25),
+    formatting: z.number().min(0).max(25),
+    impact: z.number().min(0).max(25),
+    clarity: z.number().min(0).max(25),
+  }),
+  issues: z
+    .array(
+      z.object({
+        title: z.string(),
+        severity: z.enum(['low', 'medium', 'high']),
+        explanation: z.string(),
+        fix: z.string(),
+      })
+    )
+    .min(1),
+  strengths: z
+    .array(
+      z.object({
+        title: z.string(),
+        evidence: z.string(),
+      })
+    )
+    .min(1),
+  bulletRewrites: z
+    .array(
+      z.object({
+        section: z.string(),
+        original: z.string(),
+        rewritten: z.string(),
+        rationale: z.string(),
+      })
+    )
+    .default([]),
+  keywordsPresent: z.array(z.string()).default([]),
+  keywordsMissing: z.array(z.string()).default([]),
+  summary: z.string(),
+});
+
 const objectIdSchema = z
   .string()
   .refine(v => isValidObjectId(v), { message: 'Invalid Id' });
@@ -70,4 +111,9 @@ export const idParam = z.object({ id: objectIdSchema });
 export const versionIdParam = z.object({
   id: objectIdSchema,
   versionId: objectIdSchema,
+});
+
+export const analyzeBody = z.object({
+  versionId: objectIdSchema.optional(),
+  targetRole: z.string().trim().max(120).optional(),
 });

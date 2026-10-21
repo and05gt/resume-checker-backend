@@ -1,8 +1,10 @@
+import { Analysis } from '../models/analysis.js';
 import { Resume } from '../models/resume.js';
 import { ResumeVersion } from '../models/resumeVersion.js';
 import { IResume } from '../types/resume.js';
 import { IResumeVersion } from '../types/resumeVersion.js';
 import { AppError } from '../utils/appError.js';
+import { analyzeResume } from '../utils/geminiAnalysis.js';
 import { extractText } from '../utils/parsePdf.js';
 import { parseResume } from '../utils/structuredParser.js';
 
@@ -91,5 +93,79 @@ export const deleteResumeService = async (
 ): Promise<void> => {
   const resume = await loadOwnedResume(id, userId);
   await ResumeVersion.deleteMany({ resumeId: resume._id });
+  await Analysis.deleteMany({ resumeId: resume._id });
   await resume.deleteOne();
+};
+
+export const analyzeResumeService = async (
+  id: string,
+  userId: string,
+  bodyVersionId: string,
+  targetRole: string
+) => {
+  const resume = await loadOwnedResume(id, userId);
+
+  const versionId = bodyVersionId || resume.currentVersionId;
+  if (!versionId) throw AppError.badRequest('No version to analyze');
+
+  const version = await loadVersion(
+    resume._id.toString(),
+    versionId.toString()
+  );
+
+  const { analysis, model, promptTokens, responseTokens } = await analyzeResume(
+    { rawText: version.rawText, targetRole }
+  );
+
+  const saved = await Analysis.create({
+    userId,
+    resumeId: resume._id,
+    versionId: version._id,
+    atsScore: analysis.atsScore,
+    scoreBreakdown: analysis.scoreBreakdown,
+    issues: analysis.issues,
+    strengths: analysis.strengths,
+    bulletRewrites: analysis.bulletRewrites,
+    keywordsPresent: analysis.keywordsPresent,
+    keywordsMissing: analysis.keywordsMissing,
+    summary: analysis.summary,
+    model,
+    promptTokens,
+    responseTokens,
+  });
+
+  version.latestAnalysisId = saved._id;
+  await version.save();
+
+  return saved;
+};
+
+export const getAnalysesService = async (id: string, userId: string) => {
+  const resume = await loadOwnedResume(id, userId);
+  const analyses = await Analysis.find({ resumeId: resume._id })
+    .sort({
+      createdAt: -1,
+    })
+    .lean();
+
+  return analyses;
+};
+
+export const getAnalysisVersionService = async (
+  id: string,
+  userId: string,
+  paramsVersionId: string
+) => {
+  const resume = await loadOwnedResume(id, userId);
+  const version = await loadVersion(resume._id.toString(), paramsVersionId);
+  const analysis = await Analysis.findOne({
+    resumeId: resume._id,
+    versionId: version._id,
+  })
+    .sort({
+      createdAt: -1,
+    })
+    .lean();
+
+  return analysis;
 };
