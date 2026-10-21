@@ -1,0 +1,67 @@
+import { type Request, type Response } from 'express';
+import {
+  createResumeService,
+  deleteResumeService,
+  getAllResumesService,
+  getResumeService,
+  getVersionResumeService,
+} from '../services/resumes.js';
+import { AppError } from '../utils/appError.js';
+
+export const createResumeController = async (req: Request, res: Response) => {
+  if (!req.file?.buffer || !req.file?.originalname) {
+    throw AppError.badRequest('Resume PDF file is required');
+  }
+
+  const userId = req.user!._id.toString();
+
+  const { resume, version, meta } = await createResumeService(
+    req.file.buffer,
+    userId,
+    req.body.title,
+    req.file.originalname
+  );
+
+  res.status(201).json({ resume, version, meta });
+};
+
+export const getAllResumesController = async (req: Request, res: Response) => {
+  const resumes = await getAllResumesService(req.user!._id.toString());
+
+  res.json({ resumes });
+};
+
+export const getResumeController = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+
+  const { resume, versions } = await getResumeService(
+    id,
+    req.user!._id.toString()
+  );
+
+  res.json({ resume, versions });
+};
+
+export const getVersionResumeController = async (
+  req: Request,
+  res: Response
+) => {
+  const id = String(req.params.id);
+  const versionId = String(req.params.versionId);
+
+  const version = await getVersionResumeService(
+    id,
+    req.user!._id.toString(),
+    versionId
+  );
+
+  res.json({ version });
+};
+
+export const deleteResumeController = async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+
+  await deleteResumeService(id, req.user!._id.toString());
+
+  res.json({ ok: true });
+};
