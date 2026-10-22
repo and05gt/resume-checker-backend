@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import resumeRouter from './routes/resumes.js';
+import dashboardRouter from './routes/dashboard.js';
 
 export const app = express();
 
@@ -22,6 +23,7 @@ if (!env.isProd) app.use(morgan('dev'));
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/resumes', resumeRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
