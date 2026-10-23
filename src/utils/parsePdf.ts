@@ -1,12 +1,5 @@
-import { PDFParse } from 'pdf-parse';
+import pdf from 'pdf-parse';
 import { AppError } from './appError.js';
-
-interface PdfParseResult {
-  text?: string;
-  total?: number;
-  pages?: unknown[];
-  numpages?: number | null;
-}
 
 interface PdfTextMeta {
   numPages: number | null;
@@ -26,13 +19,10 @@ export const extractText = async (
     );
   }
 
-  let parser: InstanceType<typeof PDFParse> | undefined;
-
   try {
-    parser = new PDFParse({ data: new Uint8Array(buffer) });
-    const result = (await parser.getText()) as PdfParseResult;
+    const data = await pdf(buffer);
 
-    const text = (result?.text || '').trim();
+    const text = (data.text || '').trim();
 
     if (!text || text.length < 50) {
       throw AppError.badRequest(
@@ -40,23 +30,16 @@ export const extractText = async (
       );
     }
 
-    const numPages =
-      result.total ?? result.pages?.length ?? result.numpages ?? null;
-
     return {
       text,
-      meta: { numPages },
+      meta: {
+        numPages: data.numpages ?? null,
+      },
     };
   } catch (error: unknown) {
     if (error instanceof AppError) throw error;
 
     const message = error instanceof Error ? error.message : String(error);
     throw AppError.badRequest(`Failed to parse PDF: ${message}`);
-  } finally {
-    try {
-      await parser?.destroy?.();
-    } catch {
-      /* noop */
-    }
   }
 };
