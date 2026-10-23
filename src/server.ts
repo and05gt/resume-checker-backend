@@ -23,6 +23,19 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 if (!env.isProd) app.use(morgan('dev'));
 
+let dbConnected = false;
+app.use(async (_req, _res, next) => {
+  if (!dbConnected) {
+    try {
+      await connectDB();
+      dbConnected = true;
+    } catch (error) {
+      return next(error);
+    }
+  }
+  next();
+});
+
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/resumes', resumeRouter);
@@ -34,24 +47,29 @@ app.use('/api/history', historyRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-const start = async () => {
-  try {
-    await connectDB();
-    app.listen(env.port, () => {
-      console.log(
-        `Server listening on http://localhost:${env.port} (${env.nodeEnv})`
-      );
-    });
-  } catch (error) {
-    console.error(
-      `Failed to start server: ${error instanceof Error && error.message}`
-    );
-    process.exit(1);
-  }
-};
-
 process.on('unhandledRejection', reason => {
   console.error('Unhandled rejection:', reason);
 });
 
-start();
+if (!process.env.VERCEL) {
+  const start = async () => {
+    try {
+      await connectDB();
+      dbConnected = true;
+      app.listen(env.port, () => {
+        console.log(
+          `Server listening on http://localhost:${env.port} (${env.nodeEnv})`
+        );
+      });
+    } catch (error) {
+      console.error(
+        `Failed to start server: ${error instanceof Error ? error.message : error}`
+      );
+      process.exit(1);
+    }
+  };
+
+  start();
+}
+
+export default app;
