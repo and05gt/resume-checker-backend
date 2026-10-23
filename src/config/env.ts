@@ -17,7 +17,8 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   cookieName: process.env.COOKIE_NAME || 'rc_token',
   clientOrigin: (
-    process.env.CLIENT_ORIGIN || 'http://localhost:5174,http://localhost:5173'
+    process.env.CLIENT_ORIGIN ||
+    'http://localhost:5174,http://localhost:5173,https://resume-checker-backend-rho.vercel.app'
   )
     .split(',')
     .map(o => o.trim())
