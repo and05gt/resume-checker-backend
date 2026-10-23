@@ -11,6 +11,7 @@ import authRouter from './routes/auth.js';
 import resumeRouter from './routes/resumes.js';
 import dashboardRouter from './routes/dashboard.js';
 import insightsRouter from './routes/insights.js';
+import versionsRouter from './routes/versions.js';
 
 export const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/resumes', resumeRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/insights', insightsRouter);
+app.use('/api/versions', versionsRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
