@@ -13,6 +13,7 @@ import {
   getAnalysesController,
   getAnalysisVersionController,
   getResumeController,
+  getVersionResumeController,
   rewriteResumeController,
 } from '../controllers/resumes.js';
 import {
@@ -33,7 +34,11 @@ router.get(
   validate(idParam, 'params'),
   asyncHandler(getResumeController)
 );
-router.get('/:id/versions/:versionId', validate(versionIdParam, 'params'));
+router.get(
+  '/:id/versions/:versionId',
+  validate(versionIdParam, 'params'),
+  asyncHandler(getVersionResumeController)
+);
 router.delete(
   '/:id',
   validate(idParam, 'params'),
