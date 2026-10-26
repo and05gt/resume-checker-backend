@@ -18,7 +18,7 @@ export const env = {
   cookieName: process.env.COOKIE_NAME || 'rc_token',
   clientOrigin: (
     process.env.CLIENT_ORIGIN ||
-    'http://localhost:5174,http://localhost:5173,http://localhost:3000,https://resume-checker-backend-rho.vercel.app'
+    'http://localhost:3000,https://resume-checker-hazel.vercel.app,https://resume-checker-backend-rho.vercel.app'
   )
     .split(',')
     .map(o => o.trim())
