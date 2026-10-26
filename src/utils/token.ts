@@ -41,8 +41,8 @@ export const verifyToken = (token: string): TokenPayload => {
 
 export const cookieOptions: CookieOptions = {
   httpOnly: true,
-  secure: env.isProd,
-  sameSite: env.isProd ? 'none' : 'lax',
+  secure: true,
+  sameSite: 'none',
   maxAge: 7 * 24 * 60 * 60 * 1000,
   path: '/',
 };
