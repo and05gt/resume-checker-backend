@@ -16,7 +16,7 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   cookieName: process.env.COOKIE_NAME || 'rc_token',
-  clientOrigin: (
+  clientOrigins: (
     process.env.CLIENT_ORIGIN ||
     'http://localhost:3000,https://resume-checker-hazel.vercel.app,https://resume-checker-backend-rho.vercel.app'
   )
