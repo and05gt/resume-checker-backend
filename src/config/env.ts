@@ -9,6 +9,11 @@ if (missing.length) {
   process.exit(1);
 }
 
+const isProd =
+  process.env.NODE_ENV === 'production' ||
+  process.env.VERCEL_ENV === 'production' ||
+  process.env.VERCEL_ENV === 'preview';
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 5000,
@@ -25,5 +30,5 @@ export const env = {
     .filter(Boolean),
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   geminiModel: process.env.GEMINI_MODEL || 'gemini-3.8-flash',
-  isProd: process.env.NODE_ENV === 'production',
+  isProd,
 };
